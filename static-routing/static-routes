@@ -21,6 +21,7 @@ ip route add 108.174.0.0/16 via $GW_UNRESTRICTED dev $DEV_UNRESTRICTED
 
 
 ip route del default
+sleep 1
 ip route add default via $GW_HIGH_SPEED dev $DEV_HIGH_SPEED
 
 
