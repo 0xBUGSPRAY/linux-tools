@@ -5,8 +5,8 @@ DEV_UNRESTRICTED='eth0'
 GW_UNRESTRICTED='10.30.52.1'
 
 
-DEV_HIGH_SPEED='wlan0'
-GW_HIGH_SPEED='10.30.8.1'
+DEV_HIGHSPEED='wlan0'
+GW_HIGHSPEED='10.30.8.1'
 
 
 
@@ -21,12 +21,58 @@ ip route add 108.174.0.0/16 via $GW_UNRESTRICTED dev $DEV_UNRESTRICTED
 ip route add 216.58.0.0/16 via $GW_UNRESTRICTED dev $DEV_UNRESTRICTED
 
 
-if [ "$IFACE" == "eth0" ]
+cat "/sys/class/net/"$DEV_UNRESTRICTED"/operstate"|grep up > /dev/null
+DEV_UNRESTRICTED_STATUS=$?
+cat "/sys/class/net/"$DEV_HIGHSPEED"/operstate"|grep up > /dev/null
+DEV_HIGHSPEED_STATUS=$?
+
+
+INFO=$(mktemp /tmp/static_route_XXXXX_$$)
+touch $INFO
+chmod 666 $INFO
+
+# echo $DEV_UNRESTRICTED_STATUS >> $INFO
+# echo $DEV_HIGHSPEED_STATUS >> $INFO
+# echo $IFACE >> $INFO
+# echo -ne "\n\n\n" >> $INFO
+
+if [ $IFACE == $DEV_UNRESTRICTED ]
 then
-    ip route del default
+    if [ $DEV_HIGHSPEED_STATUS -eq 0 ]
+    then
+        echo "connecting $IFACE with $DEV_HIGHSPEED already up" >> $INFO
+        ip route del default
+#        sleep 3
+        ip route add default via $GW_HIGHSPEED dev $DEV_HIGHSPEED
+    else
+        echo "connecting $IFACE with $DEV_HIGHSPEED already down" >> $INFO
+    fi
+else
+    echo -ne "\n\nnot $DEV_UNRESTRICTED\n\n" >> $INFO
 fi
 
-sleep 1
-ip route add default via $GW_HIGH_SPEED dev $DEV_HIGH_SPEED
 
+
+
+if [ $IFACE == $DEV_HIGHSPEED ]
+then
+    if [ $DEV_UNRESTRICTED_STATUS -eq 0 ]
+    then
+        echo "connecting $IFACE with $DEV_UNRESTRICTED already up" >> $INFO
+        ip route del default
+#        sleep 3
+        ip route add default via $GW_HIGHSPEED dev $DEV_HIGHSPEED
+    else
+        echo "connecting $IFACE with $DEV_UNRESTRICTED already down" >> $INFO
+    fi
+else
+    echo -ne "\n\nnot $DEV_HIGHSPEED\n\n" >> $INFO
+fi
+
+
+#sleep 3
+ip route add default via $GW_HIGHSPEED dev $DEV_HIGHSPEED
+
+sleep 10
+rm -f $INFO
 

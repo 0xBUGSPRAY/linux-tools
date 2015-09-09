@@ -3,7 +3,7 @@ install:
 	sudo chmod 755 /etc/network/if-up.d/static-routes
 	@/bin/echo -ne "\n\nRun 'sudo service network-manager restart' to commit changes\n\n"
 
-apply:
+apply:  install
 	sudo service network-manager restart
 
 
